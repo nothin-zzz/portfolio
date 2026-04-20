@@ -1,0 +1,532 @@
+```html
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=5.0" />
+<title>Farrukh Sabriy </title>
+<meta name="description" content="Farrukh Sabriy — Unhappiness Expert, Failure Expert, PRO AI USER & Athlete. Master of Epic Failures." />
+
+<!-- Tailwind CSS -->
+<script src="https://cdn.tailwindcss.com"></script>
+
+<!-- GSAP -->
+<script src="https://cdnjs.cloudflare.com/ajax/libs/gsap/3.12.5/gsap.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/gsap/3.12.5/ScrollTrigger.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/gsap/3.12.5/TextPlugin.min.js"></script>
+
+<!-- Fonts -->
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Cinzel:wght@400;600;700;900&family=Inter:wght@300;400;500;600;700;800&family=Cinzel+Decorative:wght@700;900&display=swap" rel="stylesheet">
+
+<script>
+  tailwind.config = {
+    theme: {
+      extend: {
+        colors: {
+          dragon: {
+            black: '#0a0a0a',
+            dark: '#120608',
+            blood: '#9f1239',
+            crimson: '#be123c',
+            fire: '#dc2626',
+            gold: '#eab308',
+            ash: '#f5f5f4'
+          }
+        },
+        fontFamily: {
+          display: ['"Cinzel Decorative"', 'serif'],
+          serif: ['Cinzel', 'serif'],
+          sans: ['Inter', 'system-ui', 'sans-serif']
+        }
+      }
+    }
+  }
+</script>
+
+<style>
+  :root {
+    --black: #0a0a0a;
+    --blood: #9f1239;
+    --crimson: #be123c;
+    --fire: #dc2626;
+    --gold: #eab308;
+  }
+
+  * { -webkit-tap-highlight-color: transparent; }
+
+  html, body {
+    background: #0a0a0a;
+    color: #f5f5f4;
+    font-family: 'Inter', sans-serif;
+    overflow-x: hidden;
+    scroll-behavior: smooth;
+  }
+
+  /* Scrollbar */
+  ::-webkit-scrollbar { width: 10px; }
+  ::-webkit-scrollbar-track { background: #0a0a0a; }
+  ::-webkit-scrollbar-thumb {
+    background: linear-gradient(180deg, #9f1239, #eab308);
+    border-radius: 10px;
+  }
+
+  /* Dragon scale background texture */
+  .scale-bg {
+    background-image:
+      radial-gradient(circle at 50% 50%, rgba(159, 18, 57, 0.08) 0%, transparent 60%),
+      radial-gradient(ellipse at 20% 100%, rgba(234, 179, 8, 0.05) 0%, transparent 50%),
+      radial-gradient(ellipse at 80% 0%, rgba(220, 38, 38, 0.06) 0%, transparent 50%);
+  }
+
+  .scale-texture {
+    background-image:
+      radial-gradient(circle at 15px 15px, rgba(159, 18, 57, 0.15) 2px, transparent 3px),
+      radial-gradient(circle at 45px 45px, rgba(159, 18, 57, 0.08) 2px, transparent 3px);
+    background-size: 60px 60px;
+  }
+
+  /* Glowing cracks */
+  .cracks::before {
+    content: '';
+    position: absolute;
+    inset: 0;
+    background-image:
+      linear-gradient(105deg, transparent 49.5%, rgba(220, 38, 38, 0.15) 50%, transparent 50.5%),
+      linear-gradient(75deg, transparent 49.7%, rgba(234, 179, 8, 0.1) 50%, transparent 50.3%);
+    background-size: 400px 400px, 600px 600px;
+    pointer-events: none;
+    opacity: 0.4;
+    mix-blend-mode: screen;
+  }
+
+  /* Fire text gradient */
+  .fire-text {
+    background: linear-gradient(180deg, #fef3c7 0%, #fbbf24 25%, #dc2626 60%, #9f1239 100%);
+    -webkit-background-clip: text;
+    background-clip: text;
+    -webkit-text-fill-color: transparent;
+    filter: drop-shadow(0 0 30px rgba(220, 38, 38, 0.5));
+  }
+
+  .gold-text {
+    background: linear-gradient(180deg, #fef08a 0%, #eab308 50%, #a16207 100%);
+    -webkit-background-clip: text;
+    background-clip: text;
+    -webkit-text-fill-color: transparent;
+  }
+
+  /* Glassmorphic card */
+  .glass {
+    background: rgba(20, 8, 10, 0.55);
+    backdrop-filter: blur(14px);
+    -webkit-backdrop-filter: blur(14px);
+    border: 1px solid rgba(159, 18, 57, 0.25);
+    box-shadow:
+      0 0 40px rgba(159, 18, 57, 0.08),
+      inset 0 1px 0 rgba(234, 179, 8, 0.1);
+  }
+  .glass:hover {
+    border-color: rgba(234, 179, 8, 0.5);
+    box-shadow:
+      0 0 60px rgba(220, 38, 38, 0.25),
+      inset 0 1px 0 rgba(234, 179, 8, 0.2);
+  }
+
+  /* Glow */
+  .glow-red { box-shadow: 0 0 40px rgba(220, 38, 38, 0.6), 0 0 80px rgba(159, 18, 57, 0.3); }
+  .glow-gold { box-shadow: 0 0 30px rgba(234, 179, 8, 0.5); }
+
+  /* Preloader */
+  #preloader {
+    position: fixed; inset: 0; z-index: 9999;
+    background: radial-gradient(circle at center, #1a0508 0%, #000 70%);
+    display: flex; flex-direction: column; align-items: center; justify-content: center;
+  }
+  .egg {
+    width: 140px; height: 180px;
+    background: radial-gradient(ellipse at 30% 30%, #4b1010, #0a0a0a);
+    border-radius: 50% 50% 45% 45% / 60% 60% 40% 40%;
+    position: relative;
+    box-shadow: inset -20px -20px 40px rgba(0,0,0,0.8), 0 0 60px rgba(220, 38, 38, 0.5);
+    animation: eggShake 0.6s ease-in-out infinite;
+  }
+  .egg::before, .egg::after {
+    content: '';
+    position: absolute;
+    background: linear-gradient(90deg, transparent, #dc2626, #eab308, #dc2626, transparent);
+    filter: blur(0.5px);
+    box-shadow: 0 0 15px #dc2626;
+  }
+  .egg::before {
+    top: 20%; left: 30%; width: 40%; height: 2px;
+    transform: rotate(25deg);
+  }
+  .egg::after {
+    top: 50%; left: 20%; width: 60%; height: 2px;
+    transform: rotate(-15deg);
+  }
+  @keyframes eggShake {
+    0%, 100% { transform: translateX(0) rotate(0); }
+    25% { transform: translateX(-3px) rotate(-2deg); }
+    75% { transform: translateX(3px) rotate(2deg); }
+  }
+
+  /* Embers (fire particles) */
+  .ember {
+    position: fixed;
+    width: 4px; height: 4px;
+    background: radial-gradient(circle, #fbbf24, #dc2626 60%, transparent);
+    border-radius: 50%;
+    pointer-events: none;
+    z-index: 1;
+    filter: blur(0.5px);
+  }
+
+  /* Custom cursor */
+  .cursor-dot {
+    position: fixed;
+    top: 0; left: 0;
+    width: 10px; height: 10px;
+    background: radial-gradient(circle, #fbbf24, #dc2626);
+    border-radius: 50%;
+    pointer-events: none;
+    z-index: 9998;
+    transform: translate(-50%, -50%);
+    mix-blend-mode: screen;
+    box-shadow: 0 0 20px #dc2626, 0 0 40px #9f1239;
+    transition: width 0.3s, height 0.3s;
+  }
+  .cursor-claw {
+    position: fixed;
+    top: 0; left: 0;
+    width: 36px; height: 36px;
+    border: 1.5px solid rgba(234, 179, 8, 0.7);
+    border-radius: 50%;
+    pointer-events: none;
+    z-index: 9998;
+    transform: translate(-50%, -50%);
+    transition: transform 0.15s ease-out, width 0.3s, height 0.3s, border-color 0.3s;
+    mix-blend-mode: screen;
+  }
+  .cursor-claw::before, .cursor-claw::after {
+    content: '';
+    position: absolute;
+    width: 8px; height: 8px;
+    border-top: 1.5px solid #eab308;
+    border-right: 1.5px solid #eab308;
+  }
+  .cursor-claw::before { top: -1px; right: -1px; }
+  .cursor-claw::after {
+    bottom: -1px; left: -1px;
+    border-top: none; border-right: none;
+    border-bottom: 1.5px solid #eab308;
+    border-left: 1.5px solid #eab308;
+  }
+  @media (max-width: 1024px) {
+    .cursor-dot, .cursor-claw { display: none; }
+  }
+
+  /* Dragon eyes */
+  .dragon-eye {
+    position: absolute;
+    width: 60px; height: 30px;
+    background: radial-gradient(ellipse at center, #fbbf24 0%, #dc2626 40%, transparent 70%);
+    border-radius: 50%;
+    filter: blur(3px);
+    animation: blink 4s ease-in-out infinite;
+  }
+  .dragon-eye::after {
+    content: '';
+    position: absolute;
+    left: 50%; top: 50%;
+    transform: translate(-50%, -50%);
+    width: 6px; height: 20px;
+    background: #0a0a0a;
+    border-radius: 50%;
+  }
+  @keyframes blink {
+    0%, 92%, 100% { transform: scaleY(1); }
+    95% { transform: scaleY(0.05); }
+  }
+
+  /* Buttons */
+  .btn-fire {
+    position: relative;
+    overflow: hidden;
+    background: linear-gradient(135deg, #9f1239, #dc2626);
+    transition: all 0.4s ease;
+    isolation: isolate;
+  }
+  .btn-fire::before {
+    content: '';
+    position: absolute;
+    inset: 0;
+    background: linear-gradient(135deg, #eab308, #dc2626);
+    opacity: 0;
+    transition: opacity 0.4s ease;
+    z-index: -1;
+  }
+  .btn-fire:hover::before { opacity: 1; }
+  .btn-fire:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 10px 40px rgba(220, 38, 38, 0.6), 0 0 60px rgba(234, 179, 8, 0.4);
+  }
+  .btn-fire::after {
+    content: '';
+    position: absolute;
+    top: -50%; left: -100%;
+    width: 60%; height: 200%;
+    background: linear-gradient(90deg, transparent, rgba(255,255,255,0.3), transparent);
+    transform: rotate(25deg);
+    transition: left 0.6s ease;
+  }
+  .btn-fire:hover::after { left: 150%; }
+
+  .btn-ghost {
+    border: 1px solid rgba(234, 179, 8, 0.4);
+    background: rgba(234, 179, 8, 0.03);
+    transition: all 0.4s ease;
+  }
+  .btn-ghost:hover {
+    border-color: #eab308;
+    background: rgba(234, 179, 8, 0.1);
+    box-shadow: 0 0 30px rgba(234, 179, 8, 0.3);
+  }
+
+  /* Navbar scaled */
+  .nav-scrolled {
+    background: rgba(10, 10, 10, 0.8) !important;
+    backdrop-filter: blur(20px);
+    border-bottom: 1px solid rgba(159, 18, 57, 0.3);
+  }
+
+  /* Hero title */
+  .hero-title {
+    font-family: 'Cinzel Decorative', serif;
+    letter-spacing: 0.02em;
+  }
+  .hero-letter {
+    display: inline-block;
+    transform-origin: 50% 100%;
+  }
+
+  /* Timeline */
+  .timeline-line {
+    background: linear-gradient(180deg, transparent, #9f1239 10%, #dc2626 50%, #eab308 90%, transparent);
+    box-shadow: 0 0 20px rgba(220, 38, 38, 0.6);
+  }
+
+  /* Skill bar */
+  .skill-bar {
+    height: 8px;
+    background: rgba(159, 18, 57, 0.15);
+    border-radius: 4px;
+    overflow: hidden;
+    position: relative;
+  }
+  .skill-fill {
+    height: 100%;
+    background: linear-gradient(90deg, #9f1239, #dc2626, #eab308);
+    border-radius: 4px;
+    position: relative;
+    box-shadow: 0 0 10px rgba(220, 38, 38, 0.6);
+    width: 0;
+  }
+  .skill-fill::after {
+    content: '';
+    position: absolute; right: 0; top: 0; bottom: 0;
+    width: 20px;
+    background: radial-gradient(circle at right, #fbbf24, transparent);
+    filter: blur(4px);
+  }
+
+  /* Burn effect card */
+  .burn-card {
+    position: relative;
+    transition: all 0.5s cubic-bezier(0.22, 1, 0.36, 1);
+  }
+  .burn-card::before {
+    content: '';
+    position: absolute;
+    inset: 0;
+    background: radial-gradient(circle at var(--mx, 50%) var(--my, 50%), rgba(234, 179, 8, 0.25), rgba(220, 38, 38, 0.1) 30%, transparent 60%);
+    opacity: 0;
+    transition: opacity 0.4s ease;
+    pointer-events: none;
+    border-radius: inherit;
+  }
+  .burn-card:hover::before { opacity: 1; }
+  .burn-card:hover {
+    transform: translateY(-8px) rotate(-0.5deg);
+  }
+
+  /* Floating form label */
+  .form-field {
+    position: relative;
+  }
+  .form-field input, .form-field textarea {
+    width: 100%;
+    background: rgba(159, 18, 57, 0.05);
+    border: 1px solid rgba(159, 18, 57, 0.3);
+    color: #f5f5f4;
+    padding: 1.25rem 1rem 0.5rem;
+    border-radius: 8px;
+    transition: all 0.3s ease;
+    outline: none;
+    font-family: 'Inter', sans-serif;
+  }
+  .form-field textarea { padding-top: 1.5rem; min-height: 140px; resize: vertical; }
+  .form-field input:focus, .form-field textarea:focus {
+    border-color: #eab308;
+    background: rgba(234, 179, 8, 0.05);
+    box-shadow: 0 0 20px rgba(234, 179, 8, 0.2);
+  }
+  .form-field label {
+    position: absolute;
+    top: 1rem; left: 1rem;
+    color: rgba(245, 245, 244, 0.5);
+    transition: all 0.3s ease;
+    pointer-events: none;
+    font-size: 0.95rem;
+  }
+  .form-field input:focus + label,
+  .form-field input:not(:placeholder-shown) + label,
+  .form-field textarea:focus + label,
+  .form-field textarea:not(:placeholder-shown) + label {
+    top: 0.25rem; left: 0.9rem;
+    font-size: 0.7rem;
+    color: #eab308;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+  }
+
+  /* Section heading */
+  .section-kicker {
+    color: #eab308;
+    letter-spacing: 0.35em;
+    font-size: 0.75rem;
+    text-transform: uppercase;
+    font-weight: 600;
+  }
+
+  /* Mobile menu */
+  #mobileMenu {
+    transform: translateX(100%);
+    transition: transform 0.6s cubic-bezier(0.77, 0, 0.18, 1);
+  }
+  #mobileMenu.open { transform: translateX(0); }
+
+  /* Smoke */
+  .smoke {
+    position: absolute;
+    border-radius: 50%;
+    background: radial-gradient(circle, rgba(159, 18, 57, 0.2), transparent 70%);
+    filter: blur(30px);
+    pointer-events: none;
+  }
+
+  /* Stat counter ring */
+  .stat-num {
+    font-family: 'Cinzel', serif;
+    font-weight: 900;
+  }
+
+  /* Dragon silhouette SVG glow */
+  .dragon-svg {
+    filter: drop-shadow(0 0 20px rgba(220, 38, 38, 0.4));
+  }
+
+  /* Marquee */
+  .marquee {
+    display: flex;
+    overflow: hidden;
+    gap: 3rem;
+    white-space: nowrap;
+    border-top: 1px solid rgba(159, 18, 57, 0.3);
+    border-bottom: 1px solid rgba(159, 18, 57, 0.3);
+    padding: 1.5rem 0;
+    background: linear-gradient(90deg, transparent, rgba(159, 18, 57, 0.08), transparent);
+  }
+  .marquee-track {
+    display: flex;
+    gap: 3rem;
+    animation: slide 30s linear infinite;
+    flex-shrink: 0;
+  }
+  @keyframes slide {
+    from { transform: translateX(0); }
+    to { transform: translateX(-100%); }
+  }
+
+  /* Select text color */
+  ::selection { background: #9f1239; color: #fef3c7; }
+</style>
+</head>
+<body class="scale-bg">
+
+<!-- Custom Cursor -->
+<div class="cursor-claw" id="cursorClaw"></div>
+<div class="cursor-dot" id="cursorDot"></div>
+
+<!-- Preloader -->
+<div id="preloader">
+  <div class="egg"></div>
+  <p class="mt-10 font-serif text-dragon-gold tracking-[0.4em] text-sm md:text-base uppercase" id="preloaderText">Awakening the Dragon...</p>
+  <div class="mt-6 w-48 h-[2px] bg-dragon-blood/30 overflow-hidden rounded-full">
+    <div class="h-full bg-gradient-to-r from-dragon-blood via-dragon-fire to-dragon-gold" id="preloadBar" style="width:0%"></div>
+  </div>
+</div>
+
+<!-- Ember particles container -->
+<div id="embers" class="fixed inset-0 pointer-events-none z-[2]"></div>
+
+<!-- Navigation -->
+<nav id="navbar" class="fixed top-0 left-0 right-0 z-50 transition-all duration-500">
+  <div class="max-w-7xl mx-auto px-5 md:px-10 py-5 flex items-center justify-between">
+    <a href="#hero" class="flex items-center gap-3 group">
+      <!-- Dragon Head SVG -->
+      <svg width="36" height="36" viewBox="0 0 64 64" class="dragon-svg">
+        <defs>
+          <linearGradient id="dg1" x1="0" y1="0" x2="1" y2="1">
+            <stop offset="0%" stop-color="#eab308"/>
+            <stop offset="100%" stop-color="#9f1239"/>
+          </linearGradient>
+        </defs>
+        <path d="M8 32 Q12 18, 28 16 Q42 14, 52 22 Q58 28, 56 36 L48 38 Q46 44, 40 46 L34 44 L30 50 L26 46 L22 48 L20 42 L14 40 Q8 38, 8 32 Z"
+              fill="url(#dg1)" stroke="#fef08a" stroke-width="0.5"/>
+        <circle cx="44" cy="28" r="2.5" fill="#0a0a0a"/>
+        <circle cx="44" cy="28" r="1" fill="#fbbf24"/>
+        <path d="M20 22 L16 16 M26 18 L24 12 M32 16 L32 10" stroke="#9f1239" stroke-width="1.5" stroke-linecap="round"/>
+      </svg>
+      <span class="font-display text-xl tracking-wider gold-text hidden sm:block">F. SABRIY</span>
+    </a>
+
+    <ul class="hidden lg:flex items-center gap-10 font-serif text-sm tracking-widest">
+      <li><a href="#about" class="nav-link hover:text-dragon-gold transition">ABOUT</a></li>
+      <li><a href="#skills" class="nav-link hover:text-dragon-gold transition">SKILLS</a></li>
+      <li><a href="#fails" class="nav-link hover:text-dragon-gold transition">EPIC FAILS</a></li>
+      <li><a href="#experience" class="nav-link hover:text-dragon-gold transition">JOURNEY</a></li>
+      <li><a href="#contact" class="nav-link hover:text-dragon-gold transition">SUMMON</a></li>
+    </ul>
+
+    <a href="#contact" class="hidden lg:inline-flex btn-fire px-6 py-2.5 rounded-full font-semibold text-sm tracking-wider">
+      🔥 Breathe Fire
+    </a>
+
+    <button id="menuBtn" class="lg:hidden w-10 h-10 flex flex-col items-center justify-center gap-1.5 z-50">
+      <span class="w-7 h-[2px] bg-dragon-gold transition-all" id="mb1"></span>
+      <span class="w-7 h-[2px] bg-dragon-gold transition-all" id="mb2"></span>
+      <span class="w-7 h-[2px] bg-dragon-gold transition-all" id="mb3"></span>
+    </button>
+  </div>
+</nav>
+
+<!-- Mobile Menu -->
+<div id="mobileMenu" class="fixed inset-0 z-40 lg:hidden bg-dragon-black scale-texture flex flex-col items-center justify-center gap-8">
+  <a href="#about" class="mobile-link font-display text-3xl gold-text">ABOUT</a>
+  <a href="#skills" class="mobile-link font-display text-3xl gold-text">SKILLS</a>
+  <a href="#fails" class="mobile-link font-display text-3xl gold-text">EPIC FAILS</a>
+  <a href="#experience" class="mobile-link font-display text-3xl gold-text">JOURNEY</a>
+  <a href="#contact" class="mobile-link font-display text-3xl gold-text">
