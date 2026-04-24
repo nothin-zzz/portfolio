@@ -1,0 +1,232 @@
+//@version=5
+indicator('TITAN AI V5 - PRO CAPITAL', overlay=true, max_lines_count=500, max_labels_count=500)
+
+g1 = 'Money Management'
+account_size   = input.float(2000.0, 'Kapital ($)',         minval=1.0,  group=g1)
+risk_pct       = input.float(1.0,    'Risk / treyd (%)',    minval=0.1, step=0.1, group=g1)
+rr_ratio       = input.float(2.0,    'RR nisbat',           minval=1.0, step=0.5, group=g1)
+max_sl_pts     = input.float(20.0,   'Max SL (point)',       minval=5.0, step=1.0, group=g1)
+
+g2 = 'Trend Filtrlari'
+htf_tf         = input.timeframe('240', 'HTF (trend)',       group=g2)
+htf2_tf        = input.timeframe('60',  'MTF (60min)',       group=g2)
+htf_ema_len    = input.int(200, 'HTF EMA',                   group=g2)
+ema_fast_len   = input.int(21,  'Fast EMA',                  group=g2)
+ema_mid_len    = input.int(50,  'Mid EMA',                   group=g2)
+
+g3 = 'Signal Filtrlari'
+swing_len      = input.int(7,    'Swing uzunligi', minval=5, maxval=15, group=g3)
+rsi_len        = input.int(14,   'RSI davri',                group=g3)
+rsi_ob         = input.int(60,   'RSI Overbought (qattiq)',  group=g3)
+rsi_os         = input.int(40,   'RSI Oversold (qattiq)',    group=g3)
+use_session    = input.bool(true, 'Faqat London+NY sessiya', group=g3)
+confirm_bars   = input.int(1,    'Tasdiqlash (mum soni)',    minval=1, maxval=3, group=g3,
+                 tooltip='1=tezroq, 2-3=sekinroq lekin aniqroq')
+
+// SESSIYA — faqat likvidli vaqtlar
+london = time(timeframe.period, '0700-1600', 'Europe/London')
+ny     = time(timeframe.period, '1300-2200', 'America/New_York')
+in_session = not use_session or (not na(london) or not na(ny))
+
+// HTF + MTF TREND — 3 darajali
+htf_ema  = request.security(syminfo.tickerid, htf_tf,  ta.ema(close, htf_ema_len), lookahead=barmerge.lookahead_off)
+mtf_ema  = request.security(syminfo.tickerid, htf2_tf, ta.ema(close, htf_ema_len), lookahead=barmerge.lookahead_off)
+ema_fast = ta.ema(close, ema_fast_len)
+ema_mid  = ta.ema(close, ema_mid_len)
+atr      = ta.atr(14)
+rsi      = ta.rsi(close, rsi_len)
+vol_ma   = ta.sma(volume, 20)
+
+// Uchala trend bir yo'nalishda bo'lishi shart
+htf_bull      = close > htf_ema
+htf_bear      = close < htf_ema
+mtf_bull      = close > mtf_ema
+mtf_bear      = close < mtf_ema
+ema_bull      = ema_fast > ema_mid
+ema_bear      = ema_fast < ema_mid
+trend_bull    = htf_bull and mtf_bull and ema_bull   // 3/3 bull
+trend_bear    = htf_bear and mtf_bear and ema_bear   // 3/3 bear
+
+// SWING
+ph = ta.pivothigh(high, swing_len, swing_len)
+pl = ta.pivotlow (low,  swing_len, swing_len)
+
+var float last_ph = na
+var float last_pl = na
+if not na(ph)
+    last_ph := ph
+if not na(pl)
+    last_pl := pl
+
+// SL — swing asosida
+sl_buf   = atr * 0.15
+float buy_sl  = na
+float sell_sl = na
+float buy_sd  = na
+float sell_sd = na
+
+if not na(last_pl)
+    buy_sl := last_pl - sl_buf
+    buy_sd := close - buy_sl
+if not na(last_ph)
+    sell_sl := last_ph + sl_buf
+    sell_sd := sell_sl - close
+
+// KUCHLI CANDLE — body 50%+ (qattiqlashtirildi)
+body      = math.abs(close - open)
+c_range   = high - low
+body_pct  = c_range > 0 ? body / c_range : 0
+strong_bull = close > open and body_pct > 0.5 and close > high[1]  // Yuqori yopilish
+strong_bear = close < open and body_pct > 0.5 and close < low[1]   // Pastroq yopilish
+
+// VOLUME — ortacha 1.2x dan yuqori (qattiqlashtirildi)
+vol_ok = volume > vol_ma * 1.2
+
+// MACD MOMENTUM filtri
+[macd_line, signal_line, _] = ta.macd(close, 12, 26, 9)
+macd_bull = macd_line > signal_line
+macd_bear = macd_line < signal_line
+
+// ASOSIY SIGNAL — 9 ta filtr
+buy_raw = trend_bull
+     and not na(last_pl)
+     and low  < last_pl
+     and close > last_pl
+     and strong_bull
+     and not na(buy_sd) and buy_sd > 0 and buy_sd <= max_sl_pts
+     and rsi < rsi_ob and rsi > 45
+     and vol_ok
+     and macd_bull
+     and in_session
+
+sell_raw = trend_bear
+     and not na(last_ph)
+     and high  > last_ph
+     and close < last_ph
+     and strong_bear
+     and not na(sell_sd) and sell_sd > 0 and sell_sd <= max_sl_pts
+     and rsi > rsi_os and rsi < 55
+     and vol_ok
+     and macd_bear
+     and in_session
+
+// TASDIQLASH MUMLAR — confirm_bars kutish
+buy_signal  = buy_raw  and ta.barssince(buy_raw[1])  >= confirm_bars
+sell_signal = sell_raw and ta.barssince(sell_raw[1]) >= confirm_bars
+
+// LOT
+risk_amt     = account_size * (risk_pct / 100)
+var float trade_lot = na
+var float sl_dist   = na
+
+if buy_signal
+    sl_dist   := buy_sd
+    trade_lot := math.max(math.round(risk_amt / (buy_sd * 100), 2), 0.01)
+if sell_signal
+    sl_dist   := sell_sd
+    trade_lot := math.max(math.round(risk_amt / (sell_sd * 100), 2), 0.01)
+
+// WIN RATE TRACKER
+var int   total_trades = 0
+var int   wins         = 0
+var int   losses       = 0
+var float tp_track     = na
+var float sl_track     = na
+var bool  in_trade     = false
+var bool  is_buy       = false
+
+if in_trade
+    if is_buy
+        if high >= tp_track
+            wins     += 1
+            in_trade := false
+        else if low <= sl_track
+            losses   += 1
+            in_trade := false
+    else
+        if low <= tp_track
+            wins     += 1
+            in_trade := false
+        else if high >= sl_track
+            losses   += 1
+            in_trade := false
+
+if buy_signal and not in_trade
+    total_trades += 1
+    in_trade     := true
+    is_buy       := true
+    sl_track     := buy_sl
+    tp_track     := close + buy_sd * rr_ratio
+
+if sell_signal and not in_trade
+    total_trades += 1
+    in_trade     := true
+    is_buy       := false
+    sl_track     := sell_sl
+    tp_track     := close - sell_sd * rr_ratio
+
+wr = total_trades > 0 ? (wins / total_trades) * 100 : 0.0
+
+// VIZUAL
+plot(htf_ema,  'HTF EMA', color=color.new(color.orange, 0), linewidth=2)
+plot(ema_fast, 'EMA 21',  color=color.new(color.aqua,   0), linewidth=1)
+plot(ema_mid,  'EMA 50',  color=color.new(color.yellow, 0), linewidth=1)
+
+if not na(ph)
+    line.new(bar_index-swing_len, ph, bar_index, ph, color=color.new(color.red,  50), style=line.style_dotted)
+if not na(pl)
+    line.new(bar_index-swing_len, pl, bar_index, pl, color=color.new(color.lime, 50), style=line.style_dotted)
+
+if buy_signal and not na(trade_lot)
+    tp_b   = close + buy_sd * rr_ratio
+    profit = math.round(trade_lot * buy_sd * rr_ratio * 100, 2)
+    lbl    = 'BUY ' + timeframe.period + 'm\nLot: ' + str.tostring(trade_lot, '#.##') + '\nSL: ' + str.tostring(buy_sl, '#.##') + ' (' + str.tostring(buy_sd, '#.#') + 'pt)\nTP: ' + str.tostring(tp_b, '#.##') + '\nRisk:$' + str.tostring(risk_amt, '#') + '  Profit:$' + str.tostring(profit, '#')
+    label.new(bar_index, low, lbl, color=color.new(#00c853, 0), textcolor=color.white, style=label.style_label_up, size=size.normal)
+    line.new(bar_index, close,  bar_index+20, close,  color=color.yellow,         style=line.style_dashed)
+    line.new(bar_index, buy_sl, bar_index+20, buy_sl, color=color.red,  width=2)
+    line.new(bar_index, tp_b,   bar_index+20, tp_b,   color=color.lime, width=2)
+
+if sell_signal and not na(trade_lot)
+    tp_s   = close - sell_sd * rr_ratio
+    profit = math.round(trade_lot * sell_sd * rr_ratio * 100, 2)
+    lbl    = 'SELL ' + timeframe.period + 'm\nLot: ' + str.tostring(trade_lot, '#.##') + '\nSL: ' + str.tostring(sell_sl, '#.##') + ' (' + str.tostring(sell_sd, '#.#') + 'pt)\nTP: ' + str.tostring(tp_s, '#.##') + '\nRisk:$' + str.tostring(risk_amt, '#') + '  Profit:$' + str.tostring(profit, '#')
+    label.new(bar_index, high, lbl, color=color.new(#d50000, 0), textcolor=color.white, style=label.style_label_down, size=size.normal)
+    line.new(bar_index, close,   bar_index+20, close,   color=color.yellow,          style=line.style_dashed)
+    line.new(bar_index, sell_sl, bar_index+20, sell_sl, color=color.red,  width=2)
+    line.new(bar_index, tp_s,    bar_index+20, tp_s,    color=color.lime, width=2)
+
+// DASHBOARD
+var table dash = table.new(position.top_right, 2, 10, bgcolor=color.new(#0d1117, 0), border_width=1, border_color=color.new(color.gray, 60), frame_width=2, frame_color=color.gold)
+
+if barstate.islast
+    table.cell(dash, 0, 0, 'TITAN AI V5 PRO', text_color=color.gold, bgcolor=color.new(#1a1f2e, 0), text_size=size.normal)
+    table.cell(dash, 1, 0, '$' + str.tostring(account_size, '#'), text_color=color.white, bgcolor=color.new(#1a1f2e, 0), text_size=size.normal)
+    table.cell(dash, 0, 1, 'HTF+MTF Trend', text_color=color.gray, text_size=size.small)
+    table.cell(dash, 1, 1, trend_bull ? 'BULLISH 3/3' : trend_bear ? 'BEARISH 3/3' : 'MIXED', text_color=trend_bull ? color.lime : trend_bear ? color.red : color.yellow, bgcolor=trend_bull ? color.new(color.green, 80) : trend_bear ? color.new(color.red, 80) : color.new(color.gray, 80), text_size=size.small)
+    table.cell(dash, 0, 2, 'MACD', text_color=color.gray, text_size=size.small)
+    table.cell(dash, 1, 2, macd_bull ? 'BULL' : 'BEAR', text_color=macd_bull ? color.lime : color.red, text_size=size.small)
+    table.cell(dash, 0, 3, 'RSI', text_color=color.gray, text_size=size.small)
+    table.cell(dash, 1, 3, str.tostring(math.round(rsi, 1)), text_color=rsi > rsi_ob ? color.red : rsi < rsi_os ? color.lime : color.white, text_size=size.small)
+    table.cell(dash, 0, 4, 'Volume', text_color=color.gray, text_size=size.small)
+    table.cell(dash, 1, 4, vol_ok ? 'YUQORI' : 'PAST', text_color=vol_ok ? color.lime : color.red, text_size=size.small)
+    table.cell(dash, 0, 5, 'Sessiya', text_color=color.gray, text_size=size.small)
+    table.cell(dash, 1, 5, in_session ? 'AKTIV' : 'YOPIQ', text_color=in_session ? color.lime : color.red, text_size=size.small)
+    table.cell(dash, 0, 6, 'Win Rate', text_color=color.gray, text_size=size.small)
+    table.cell(dash, 1, 6, str.tostring(math.round(wr, 1)) + '% (' + str.tostring(wins) + 'W/' + str.tostring(losses) + 'L)', text_color=color.white, bgcolor=wr >= 60 ? color.new(color.green, 70) : wr >= 50 ? color.new(color.orange, 70) : color.new(color.red, 70), text_size=size.small)
+    table.cell(dash, 0, 7, 'Jami Signal', text_color=color.gray, text_size=size.small)
+    table.cell(dash, 1, 7, str.tostring(total_trades), text_color=color.white, text_size=size.small)
+    table.cell(dash, 0, 8, "So'ngi Lot", text_color=color.gray, text_size=size.small)
+    table.cell(dash, 1, 8, not na(trade_lot) ? str.tostring(trade_lot, '#.##') + ' lot' : '---', text_color=color.orange, text_size=size.small)
+    table.cell(dash, 0, 9, 'Risk / RR', text_color=color.gray, text_size=size.small)
+    table.cell(dash, 1, 9, '$' + str.tostring(risk_amt, '#') + ' | 1:' + str.tostring(rr_ratio, '#.#'), text_color=color.yellow, text_size=size.small)
+
+// ALERT — Pipedream / Make.com ga ketadi
+if buy_signal and not na(trade_lot)
+    tp_b = close + buy_sd * rr_ratio
+    msg  = '{"signal":"BUY","symbol":"' + syminfo.ticker + '","tf":"' + timeframe.period + '","price":"' + str.tostring(close, '#.##') + '","sl":"' + str.tostring(buy_sl, '#.##') + '","tp":"' + str.tostring(tp_b, '#.##') + '","lot":"' + str.tostring(trade_lot, '#.##') + '","sldist":"' + str.tostring(buy_sd, '#.#') + '","risk":"' + str.tostring(risk_amt, '#.##') + '"}'
+    alert(msg, alert.freq_once_per_bar_close)
+
+if sell_signal and not na(trade_lot)
+    tp_s = close - sell_sd * rr_ratio
+    msg  = '{"signal":"SELL","symbol":"' + syminfo.ticker + '","tf":"' + timeframe.period + '","price":"' + str.tostring(close, '#.##') + '","sl":"' + str.tostring(sell_sl, '#.##') + '","tp":"' + str.tostring(tp_s, '#.##') + '","lot":"' + str.tostring(trade_lot, '#.##') + '","sldist":"' + str.tostring(sell_sd, '#.#') + '","risk":"' + str.tostring(risk_amt, '#.##') + '"}'
+    alert(msg, alert.freq_once_per_bar_close)
